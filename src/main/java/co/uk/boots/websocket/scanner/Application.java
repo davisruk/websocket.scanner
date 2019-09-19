@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -28,6 +29,9 @@ public class Application implements ComPortDataProcessor{
 	    return executor;
 	}
 	
+	@Autowired
+	public SendMessageService sendMessageService;
+	
 	public static void main(String[] args) {
 		ConfigurableApplicationContext run = SpringApplication.run(Application.class, args);
 		Application app = run.getBean(Application.class);
@@ -36,14 +40,14 @@ public class Application implements ComPortDataProcessor{
 	
 	@Override
 	public void process(String data) {
-		// TODO Auto-generated method stub
+		System.out.println("[MAIN APP THREAD] " + data);
 		
 	}
 
 	private void run() {
 		ExecutorService service = Executors.newFixedThreadPool(1);
 		Runnable r = () -> {
-			new NonBlockingListener(this);
+			new NonBlockingListener(sendMessageService);
 		};
 		
 		service.submit(r);
