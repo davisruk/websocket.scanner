@@ -32,12 +32,14 @@ public class NonBlockingListener {
 		int attempts = 0;
 		while (!portOpened && attempts < retries) {
 			attempts++;
+			processor.process ("Connection Attempt: " + attempts);
 			commPort = SerialPort.getCommPorts()[0];
 			portOpened = commPort.openPort();
 			if (!portOpened) {
 				try {
 					outputMessage ("Port Unavailable. Sleeping for 2 seconds.");
-				Thread.sleep(10);
+					processor.process("Port Unavailable. Sleeping for 2 seconds.");
+					Thread.sleep(2000);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
