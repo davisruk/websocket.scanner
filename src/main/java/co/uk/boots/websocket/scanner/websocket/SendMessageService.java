@@ -19,7 +19,7 @@ public class SendMessageService implements WebSocketScanSender{
 		// TODO Auto-generated method stub
 		System.out.println("[SendMessageService] Sending:" + data);
 		try {
-			this.template.convertAndSend("/topic/greetings", data);
+			this.template.convertAndSend("/topic/com", data);
 		} catch (MessagingException me) {
 			me.printStackTrace();
 		}

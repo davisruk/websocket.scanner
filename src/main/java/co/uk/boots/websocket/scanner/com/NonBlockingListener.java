@@ -1,7 +1,5 @@
 package co.uk.boots.websocket.scanner.com;
 
-import javax.annotation.PreDestroy;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -38,7 +36,7 @@ public class NonBlockingListener {
 			int attempts = 0;
 			while (!portOpened && attempts < retries) {
 				attempts++;
-				processor.process("Connection Attempt: " + attempts);
+				processor.process("[STATUS] Connection Attempt: " + attempts);
 				SerialPort[] ports = SerialPort.getCommPorts();
 				if (ports == null || ports.length == 0) {
 					attempts = retries;
@@ -48,7 +46,7 @@ public class NonBlockingListener {
 					if (!portOpened) {
 						try {
 							outputMessage("Port Unavailable. Sleeping for 2 seconds.");
-							processor.process("Port Unavailable. Sleeping for 2 seconds.");
+							processor.process("[STATUS] Port Unavailable. Sleeping for 2 seconds.");
 							Thread.sleep(2000);
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -60,10 +58,10 @@ public class NonBlockingListener {
 			if (attempts == retries) {
 				keepGoing = false;
 				outputMessage("Port could not be opened in " + attempts + " attempts");
-				processor.process("COM thread reports no available ports found.");
+				processor.process("[STATUS] COM thread reports no available ports found.");
 			} else {
 				outputMessage("Port Successfully Opened.");
-				processor.process("COM thread reports port opened successfully.");
+				processor.process("[STATUS] COM thread reports port opened successfully.");
 			}
 		}
 	}
@@ -102,7 +100,7 @@ public class NonBlockingListener {
 			if (keepGoing) {
 				if (bytesAvailable == -1) {
 					portOpened = false;
-					processor.process("COM Port Error. Reconnecting");
+					processor.process("[STATUS] COM Port Error. Reconnecting");
 					openPort(OPEN_RETRIES);
 				} else {
 					// Data on the Comm Port
