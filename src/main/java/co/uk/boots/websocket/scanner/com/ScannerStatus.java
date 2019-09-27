@@ -1,7 +1,13 @@
 package co.uk.boots.websocket.scanner.com;
 
 public class ScannerStatus {
-	boolean portOpened = false;
+	boolean connected = false;
+	public boolean isConnected() {
+		return connected;
+	}
+	public void setConnected(boolean connected) {
+		this.connected = connected;
+	}
 	boolean attemptingConnection = false;
 	String statusMessage = "";
 	String dataMessage="";
@@ -11,12 +17,6 @@ public class ScannerStatus {
 	}
 	public void setDataMessage(String dataMessage) {
 		this.dataMessage = dataMessage;
-	}
-	public boolean isPortOpened() {
-		return portOpened;
-	}
-	public void setPortOpened(boolean portOpened) {
-		this.portOpened = portOpened;
 	}
 	public boolean isAttemptingConnection() {
 		return attemptingConnection;

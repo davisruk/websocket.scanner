@@ -36,10 +36,10 @@ public class NonBlockingListener {
 	}
 
 	private void openPort(int retries) {
-		if (!scannerStatus.isPortOpened() && keepGoing) {
+		if (!scannerStatus.isConnected() && keepGoing) {
 			outputMessage("Scanning for COM ports.");
 			int attempts = 0;
-			while (!scannerStatus.isPortOpened() && attempts < retries) {
+			while (!scannerStatus.isConnected() && attempts < retries) {
 				scannerStatus.setAttemptingConnection(true);
 				scannerStatus.setStatusMessage("[STATUS] Connection Attempt: " + attempts);
 				attempts++;
@@ -49,8 +49,8 @@ public class NonBlockingListener {
 					attempts = retries;
 				} else {
 					commPort = ports[0];
-					scannerStatus.setPortOpened(commPort.openPort());
-					if (!scannerStatus.isPortOpened()) {
+					scannerStatus.setConnected(commPort.openPort());
+					if (!scannerStatus.isConnected()) {
 						try {
 							outputMessage("Port Unavailable. Sleeping for 2 seconds.");
 							scannerStatus.setStatusMessage("[STATUS] Port Unavailable. Sleeping for 2 seconds.");
@@ -110,7 +110,7 @@ public class NonBlockingListener {
 
 			if (keepGoing) {
 				if (bytesAvailable == -1) {
-					scannerStatus.setPortOpened(false);
+					scannerStatus.setConnected(false);
 					scannerStatus.setStatusMessage("[STATUS] COM Port Error. Reconnecting");
 					processor.process(scannerStatus);
 					openPort(OPEN_RETRIES);

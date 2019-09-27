@@ -19,15 +19,10 @@ public class SendMessageService implements WebSocketScanSender{
 	@Override
 	public void send(ScannerStatus status) {
 		// TODO Auto-generated method stub
-		// temp - just return entire status eventually
 		try {
-			if (status.getDataMessage().length() > 0) {
-				System.out.println("[SendMessageService] Sending:" + status.getDataMessage());
-				this.template.convertAndSend("/topic/com", status.getDataMessage());
-			} else {
-			System.out.println("[SendMessageService] Sending:" + status.getStatusMessage());
-			this.template.convertAndSend("/topic/com", status.getStatusMessage());
-			}
+			System.out.println("[SendMessageService] Sending:" + status);
+			this.template.convertAndSend("/topic/com", status);
+			status.setDataMessage("");
 		} catch (MessagingException me) {
 			me.printStackTrace();
 		}
