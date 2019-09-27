@@ -14,6 +14,11 @@ public class NonBlockingListener {
 	private SerialPort commPort;
 	private boolean keepGoing = false;
 	boolean portOpened = false;
+	private ScannerStatus scannerStatus;
+
+	public ScannerStatus getScannerStatus() {
+		return scannerStatus;
+	}
 
 	public boolean isPortOpened() {
 		return portOpened;
@@ -31,22 +36,25 @@ public class NonBlockingListener {
 	}
 
 	private void openPort(int retries) {
-		if (!portOpened && keepGoing) {
+		if (!scannerStatus.isPortOpened() && keepGoing) {
 			outputMessage("Scanning for COM ports.");
 			int attempts = 0;
-			while (!portOpened && attempts < retries) {
+			while (!scannerStatus.isPortOpened() && attempts < retries) {
+				scannerStatus.setAttemptingConnection(true);
+				scannerStatus.setStatusMessage("[STATUS] Connection Attempt: " + attempts);
 				attempts++;
-				processor.process("[STATUS] Connection Attempt: " + attempts);
+				processor.process(scannerStatus);
 				SerialPort[] ports = SerialPort.getCommPorts();
 				if (ports == null || ports.length == 0) {
 					attempts = retries;
 				} else {
 					commPort = ports[0];
-					portOpened = commPort.openPort();
-					if (!portOpened) {
+					scannerStatus.setPortOpened(commPort.openPort());
+					if (!scannerStatus.isPortOpened()) {
 						try {
 							outputMessage("Port Unavailable. Sleeping for 2 seconds.");
-							processor.process("[STATUS] Port Unavailable. Sleeping for 2 seconds.");
+							scannerStatus.setStatusMessage("[STATUS] Port Unavailable. Sleeping for 2 seconds.");
+							processor.process(scannerStatus);
 							Thread.sleep(2000);
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -54,14 +62,16 @@ public class NonBlockingListener {
 					}
 				}
 			}
-
+			scannerStatus.setAttemptingConnection(false);
 			if (attempts == retries) {
 				keepGoing = false;
 				outputMessage("Port could not be opened in " + attempts + " attempts");
-				processor.process("[STATUS] COM thread reports no available ports found.");
+				scannerStatus.setStatusMessage("[STATUS]:Closed");
+				processor.process(scannerStatus);
 			} else {
 				outputMessage("Port Successfully Opened.");
-				processor.process("[STATUS] COM thread reports port opened successfully.");
+				scannerStatus.setStatusMessage("[STATUS]:Open");
+				processor.process(scannerStatus);
 			}
 		}
 	}
@@ -83,6 +93,7 @@ public class NonBlockingListener {
 	
 	@Async
 	public void run() {
+		scannerStatus = new ScannerStatus();
 		keepGoing = true;
 		openPort(OPEN_RETRIES);
 		while (keepGoing) {
@@ -99,8 +110,9 @@ public class NonBlockingListener {
 
 			if (keepGoing) {
 				if (bytesAvailable == -1) {
-					portOpened = false;
-					processor.process("[STATUS] COM Port Error. Reconnecting");
+					scannerStatus.setPortOpened(false);
+					scannerStatus.setStatusMessage("[STATUS] COM Port Error. Reconnecting");
+					processor.process(scannerStatus);
 					openPort(OPEN_RETRIES);
 				} else {
 					// Data on the Comm Port
@@ -114,7 +126,8 @@ public class NonBlockingListener {
 						bufferCounter++;
 					}
 					// no more data on the Comm port
-					processor.process(builder.toString());
+					scannerStatus.setDataMessage(builder.toString());
+					processor.process(scannerStatus);
 				}
 			}
 		}

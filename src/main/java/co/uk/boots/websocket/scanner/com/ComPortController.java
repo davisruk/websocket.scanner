@@ -35,8 +35,8 @@ public class ComPortController implements ComPortDataProcessor, ComPortCommandRu
     }
     
 	@Override
-	public void process(String data) {
-		sendMessageService.send(data);
+	public void process(ScannerStatus status) {
+		sendMessageService.send(status);
 	}
 	
 	private void runListener() {
@@ -45,7 +45,6 @@ public class ComPortController implements ComPortDataProcessor, ComPortCommandRu
 	}
  
 	public void scannerStatusQuery() {
-		String message = comPortListener.isPortOpened() ? "[STATUS]:Open" : "[STATUS]:Closed";
-		sendMessageService.send(message);
+		sendMessageService.send(comPortListener.getScannerStatus());
 	}
 }
