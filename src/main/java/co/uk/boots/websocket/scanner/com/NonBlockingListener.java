@@ -63,14 +63,14 @@ public class NonBlockingListener {
 				}
 			}
 			scannerStatus.setAttemptingConnection(false);
-			if (attempts == retries) {
+			if (scannerStatus.isConnected()){
+				outputMessage("Port Successfully Opened.");
+				scannerStatus.setStatusMessage("[STATUS]:Open");
+				processor.process(scannerStatus);
+			} else {
 				keepGoing = false;
 				outputMessage("Port could not be opened in " + attempts + " attempts");
 				scannerStatus.setStatusMessage("[STATUS]:Closed");
-				processor.process(scannerStatus);
-			} else {
-				outputMessage("Port Successfully Opened.");
-				scannerStatus.setStatusMessage("[STATUS]:Open");
 				processor.process(scannerStatus);
 			}
 		}
