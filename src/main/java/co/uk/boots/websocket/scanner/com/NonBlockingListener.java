@@ -48,8 +48,11 @@ public class NonBlockingListener {
 				if (ports == null || ports.length == 0) {
 					attempts = retries;
 				} else {
-					commPort = ports[0];
-					scannerStatus.setConnected(commPort.openPort());
+					int i = 0;
+					while (i < ports.length && !scannerStatus.isConnected()) {
+						commPort = ports[i++];
+						scannerStatus.setConnected(commPort.openPort());
+					}
 					if (!scannerStatus.isConnected()) {
 						try {
 							outputMessage("Port Unavailable. Sleeping for 2 seconds.");
