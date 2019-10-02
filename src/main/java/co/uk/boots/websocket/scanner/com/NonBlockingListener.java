@@ -1,5 +1,8 @@
 package co.uk.boots.websocket.scanner.com;
 
+import java.io.BufferedInputStream;
+import java.io.InputStream;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -51,6 +54,7 @@ public class NonBlockingListener {
 					int i = 0;
 					while (i < ports.length && !scannerStatus.isConnected()) {
 						commPort = ports[i++];
+						commPort.setBaudRate(4800);
 						scannerStatus.setConnected(commPort.openPort());
 					}
 					if (!scannerStatus.isConnected()) {
@@ -66,7 +70,7 @@ public class NonBlockingListener {
 				}
 			}
 			scannerStatus.setAttemptingConnection(false);
-			if (scannerStatus.isConnected()){
+			if (scannerStatus.isConnected()) {
 				outputMessage("Port Successfully Opened.");
 				scannerStatus.setStatusMessage("[STATUS]:Open");
 				processor.process(scannerStatus);
@@ -93,48 +97,51 @@ public class NonBlockingListener {
 			commPort.closePort();
 		}
 	}
-	
+
 	@Async
 	public void run() {
 		scannerStatus = new ScannerStatus();
 		keepGoing = true;
 		openPort(OPEN_RETRIES);
-		while (keepGoing) {
-			StringBuilder builder = new StringBuilder();
-			int bytesAvailable = 0;
-			while ((bytesAvailable = commPort.bytesAvailable()) == 0 && keepGoing) {
-				try {
+		InputStream is = commPort.getInputStream();
+		try {
+			while (keepGoing) {
+				StringBuilder builder = new StringBuilder();
+				int bytesAvailable = 0;
+
+				while ((bytesAvailable = is.available()) == 0 && keepGoing) {
 					// No Data Available - try again in 10 milliseconds
 					Thread.sleep(10);
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
-			}
 
-			if (keepGoing) {
-				if (bytesAvailable == -1) {
-					scannerStatus.setConnected(false);
-					scannerStatus.setStatusMessage("[STATUS] COM Port Error. Reconnecting");
-					processor.process(scannerStatus);
-					openPort(OPEN_RETRIES);
-				} else {
-					// Data on the Comm Port
-					int bufferCounter = 1; // count for number of reads required for whole data set
-					while (commPort.bytesAvailable() > 0) {
-						byte[] readBuffer = new byte[commPort.bytesAvailable()];
-						int len = commPort.readBytes(readBuffer, readBuffer.length);
-						outputMessage("Comm Read Number " + bufferCounter + " was " + len + " bytes");
-						outputMessage("Data Read From Port: " + new String(readBuffer));
-						builder.append(new String(readBuffer));
-						bufferCounter++;
+				if (keepGoing) {
+					if (bytesAvailable == -1) {
+						scannerStatus.setConnected(false);
+						scannerStatus.setStatusMessage("[STATUS] COM Port Error. Reconnecting");
+						processor.process(scannerStatus);
+						openPort(OPEN_RETRIES);
+					} else {
+						// Data on the Comm Port
+						int bufferCounter = 1; // count for number of reads required for whole data set
+						while (is.available() > 0) {
+							Thread.sleep(5);
+							byte[] readBuffer = new byte[is.available()];
+							int len = is.read(readBuffer);
+							outputMessage("Comm Read Number " + bufferCounter + " was " + len + " bytes");
+							outputMessage("Data Read From Port: " + new String(readBuffer));
+							builder.append(new String(readBuffer));
+							bufferCounter++;
+						}
+						// no more data on the Comm port
+						scannerStatus.setDataMessage(builder.toString());
+						processor.process(scannerStatus);
 					}
-					// no more data on the Comm port
-					scannerStatus.setDataMessage(builder.toString());
-					processor.process(scannerStatus);
 				}
 			}
+			outputMessage("Thread exiting. Closing Port.");
+			closePort();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		outputMessage("Thread exiting. Closing Port.");
-		closePort();
 	}
 }
